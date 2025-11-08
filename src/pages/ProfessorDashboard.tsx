@@ -3,26 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Users, BookOpen, LogOut, Plus } from "lucide-react";
+import QRCodeGenerator from "@/components/QRCodeGenerator";
 
 const ProfessorDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [courses, setCourses] = useState<any[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        navigate("/auth");
-      } else {
-        setUser(user);
-        loadCourses(user.id);
-      }
-    });
-  }, [navigate]);
 
   const loadCourses = async (userId: string) => {
     const { data, error } = await supabase
@@ -41,6 +32,25 @@ const ProfessorDashboard = () => {
       setCourses(data || []);
     }
   };
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        navigate("/auth");
+      } else {
+        setUser(user);
+        loadCourses(user.id);
+      }
+    });
+  }, [navigate]);
+
+  // Reload courses when returning to this page (e.g., from create course)
+  useEffect(() => {
+    if (user && location.pathname === "/professor") {
+      loadCourses(user.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, user]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -95,15 +105,29 @@ const ProfessorDashboard = () => {
                 </Button>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className="cursor-pointer hover:bg-accent/50 transition-colors"
+              onClick={() => {
+                const coursesSection = document.getElementById("my-courses");
+                if (coursesSection) {
+                  coursesSection.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+            >
               <CardHeader>
                 <CardTitle className="text-2xl">QR Codes</CardTitle>
                 <CardDescription>Generate & manage</CardDescription>
               </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline">
+                  <QrCode className="w-4 h-4 mr-2" />
+                  View All QR Codes
+                </Button>
+              </CardContent>
             </Card>
           </div>
 
-          <Card>
+          <Card id="my-courses">
             <CardHeader>
               <CardTitle>My Courses</CardTitle>
               <CardDescription>Manage your courses and generate QR codes</CardDescription>
@@ -129,13 +153,18 @@ const ProfessorDashboard = () => {
                         <CardDescription>{course.code}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2 text-sm text-muted-foreground">
-                          <p>Semester: {course.semester || "N/A"}</p>
-                          <p>Year: {course.year || "N/A"}</p>
-                          <Button className="w-full mt-4" size="sm">
-                            <QrCode className="w-4 h-4 mr-2" />
-                            Generate QR Code
-                          </Button>
+                        <div className="space-y-4">
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <p>Semester: {course.semester || "N/A"}</p>
+                            <p>Year: {course.year || "N/A"}</p>
+                          </div>
+                          <div className="pt-2 border-t">
+                            <QRCodeGenerator
+                              courseId={course.id}
+                              courseName={course.name}
+                              courseCode={course.code}
+                            />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
