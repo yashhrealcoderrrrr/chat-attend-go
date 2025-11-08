@@ -7,10 +7,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { QrCode, Users, BookOpen, LogOut, Plus } from "lucide-react";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
+import ChatAnalytics from "@/components/ChatAnalytics";
 
 const ProfessorDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [courses, setCourses] = useState<any[]>([]);
+  const [chatAnalyticsOpen, setChatAnalyticsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -100,7 +102,11 @@ const ProfessorDashboard = () => {
                 <CardDescription>Query attendance data</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" variant="gradient">
+                <Button 
+                  className="w-full" 
+                  variant="gradient"
+                  onClick={() => setChatAnalyticsOpen(true)}
+                >
                   Open Chat
                 </Button>
               </CardContent>
@@ -175,6 +181,12 @@ const ProfessorDashboard = () => {
           </Card>
         </div>
       </main>
+
+      <ChatAnalytics 
+        open={chatAnalyticsOpen} 
+        onOpenChange={setChatAnalyticsOpen}
+        courses={courses}
+      />
     </div>
   );
 };
